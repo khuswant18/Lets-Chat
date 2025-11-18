@@ -12,15 +12,15 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = await request.json();
 
-    // Validation
+
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
-      );
+      ); 
     }
 
-    // Find user by email
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check password
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
@@ -40,14 +40,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate JWT token
+
     const token = jwt.sign(
       { userId: user._id, email: user.email, username: user.username },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
+    console.log(token) 
 
-    // Return user without password and token
+
     const userObject = user.toObject();
     delete userObject.password;
 

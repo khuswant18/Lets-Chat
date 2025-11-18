@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     const { username, email, password: userPassword } = await request.json();
 
-    // Validation
+
     if (!username || !email || !userPassword) {
       return NextResponse.json(
         { error: 'Username, email, and password are required' },
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
+
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash password
+
     const hashedPassword = await bcrypt.hash(userPassword, 12);
 
-    // Create user
+
     const user = new User({
       username,
       email,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     await user.save();
 
-    // Return user without password
+
     const userObject = user.toObject();
     delete userObject.password;
 
