@@ -5,10 +5,21 @@ import User from '@/models/User';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Starting signup process...');
     await dbConnect();
+    console.log('Database connected');
 
-    const { username, email, password: userPassword } = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (err) {
+      console.error('Failed to parse request body:', err);
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
+    const { username, email, password: userPassword } = body || {};
+
+    console.log('Signup request body:', { username, email, hasPassword: !!userPassword });
 
     if (!username || !email || !userPassword) {
       return NextResponse.json(
@@ -24,29 +35,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-
+    console.log('Checking for existing user...');
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
 
     if (existingUser) {
+      console.log('User already exists:', existingUser.email);
       return NextResponse.json(
         { error: 'User with this email or username already exists' },
         { status: 400 }
       );
     }
 
-
+    console.log('Hashing password...');
     const hashedPassword = await bcrypt.hash(userPassword, 12);
 
-
+    console.log('Creating new user...');
     const user = new User({
       username,
       email,
       password: hashedPassword,
     });
 
+    console.log('Saving user...');
     await user.save();
+
+    console.log('User saved successfully:', user._id);
 
 
     const userObject = user.toObject();
