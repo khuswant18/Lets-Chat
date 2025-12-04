@@ -1,21 +1,21 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   trailingSlash: false,
   assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '',
   poweredByHeader: false,
-  images: {
-    unoptimized: false,
-  },
+  images: { unoptimized: false },
 
-  // 👇 Force Next.js to use server runtime on Vercel
+  // 🚀 Correct location for Next.js 15+ (NOT in experimental)
+  outputFileTracingRoot: path.join(__dirname, "../"),
+
+  // 🚀 Force server runtime
   output: "standalone",
+
   experimental: {
-    serverActions: {
-      allowedOrigins: ["*"],
-    }
+    serverActions: { allowedOrigins: ["*"] }
   }
 };
 
 export default nextConfig;
-
