@@ -1,12 +1,18 @@
 "use client";
 import { io, Socket } from "socket.io-client";
 
-const URL = process.env.NODE_ENV === 'production' 
-  ? window.location.origin 
-  : 'http://localhost:3000';
+// Lazy URL determination to avoid SSR issues
+const getSocketURL = () => {
+  if (typeof window !== 'undefined') {
+    return process.env.NODE_ENV === 'production'
+      ? window.location.origin
+      : 'http://localhost:3000';
+  }
+  return 'http://localhost:3000'; // fallback for SSR
+};
 
 // Initialize socket with auto-connect disabled initially
-export const socket: Socket = io(URL, {
+export const socket: Socket = io(getSocketURL(), {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
