@@ -1,0 +1,34 @@
+"use client";
+import { io, Socket } from "socket.io-client";
+
+const URL = process.env.NODE_ENV === 'production' 
+  ? window.location.origin 
+  : 'http://localhost:3000';
+
+// Initialize socket with auto-connect disabled initially
+export const socket: Socket = io(URL, {
+  autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  transports: ['websocket', 'polling']
+});
+
+// Add debugging
+if (typeof window !== 'undefined') {
+  socket.on('connect', () => {
+    console.log('✅ Socket connected:', socket.id);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('❌ Socket disconnected:', reason);
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('🔴 Socket connection error:', error);
+  });
+
+  socket.on('reconnect', (attemptNumber) => {
+    console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+  });
+}

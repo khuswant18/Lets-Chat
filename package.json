@@ -1,0 +1,34 @@
+{
+  "name": "chatsocketnext15",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --loader ts-node/esm server.mts",
+    "dev:next": "next dev",
+    "build": "next build",
+    "build:socket": "next build && tsc --project tsconfig.server.json",
+    "start": "next start",
+    "start:socket": "NODE_ENV=production node dist/server.mjs",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "firebase": "^12.6.0",
+    "lucide-react": "^0.555.0",
+    "next": "15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}
