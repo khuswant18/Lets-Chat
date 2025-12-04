@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node --loader ts-node/esm server.mts",
     "dev:next": "next dev",
-    "build": "next build",
+    "build": "next build && npm run copy-manifest",
+    "copy-manifest": "mkdir -p public && cp .next/routes-manifest.json public/routes-manifest.json 2>/dev/null || true",
     "build:socket": "next build && tsc --project tsconfig.server.json",
     "start": "next start",
     "start:socket": "NODE_ENV=production node dist/server.mjs",

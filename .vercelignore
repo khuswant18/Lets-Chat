@@ -1,0 +1,40 @@
+⚠️ **IMPORTANT: Socket.IO + Vercel Limitation** ⚠️
+
+This project uses Socket.IO with a custom server, which **WILL NOT work on Vercel**.
+
+While the build may succeed by copying routes-manifest.json, the **real-time chat functionality will be broken** because:
+
+1. Vercel uses serverless functions - no persistent connections
+2. Socket.IO requires a long-running server process
+3. WebSocket connections will fail
+
+## ✅ Working Deployment Options:
+
+### **Railway** (Recommended)
+- Full Socket.IO support
+- Free tier available
+- 1-click GitHub deployment
+- Visit: https://railway.app
+
+### **Render**
+- WebSocket support
+- Free tier
+- GitHub integration
+- Visit: https://render.com
+
+### **DigitalOcean App Platform**
+- Full server support
+- Predictable pricing
+- Visit: https://www.digitalocean.com/products/app-platform
+
+## 📖 Full Instructions
+See `DEPLOYMENT.md` for complete step-by-step deployment guide.
+
+---
+
+**If you must use Vercel**, you would need to:
+1. Remove the custom Socket.IO server
+2. Use a separate WebSocket service (like Pusher or Ably)
+3. Significantly refactor the application
+
+**Recommendation: Deploy to Railway instead - it works perfectly with Socket.IO!**
