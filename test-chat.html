@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat Test</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .message.own { background: #e3f2fd; }
+        .message.other { background: #f3e5f5; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        input, button {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input { flex: 1; }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Socket.IO Chat Test</h1>
+
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="username" placeholder="Enter your name" />
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+
+        <div id="messages" class="messages"></div>
+
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <div id="onlineCount">Online users: 0</div>
+    </div>
+
+    <script>
+        let socket;
+        let username = '';
+
+        function connect() {
+            username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            socket = io('http://localhost:3000');
+
+            socket.on('connect', () => {
+                console.log('Connected:', socket.id);
+                updateStatus('Connected', true);
+                socket.emit('join-room', { room: 'global-chat', username: username });
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected');
+                updateStatus('Disconnected', false);
+            });
+
+            socket.on('message', (data) => {
+                addMessage(data.sender, data.message, data.sender === username);
+            });
+
+            socket.on('user_joined', (message) => {
+                addMessage('System', message, false, true);
+            });
+
+            socket.on('user_left', (message) => {
+                addMessage('System', message, false, true);
+            });
+
+            socket.on('online_users', (count) => {
+                document.getElementById('onlineCount').textContent = `Online users: ${count}`;
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || !socket || !socket.connected) return;
+
+            socket.emit('message', {
+                room: 'global-chat',
+                message: message,
+                sender: username
+            });
+
+            input.value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function addMessage(sender, message, isOwn = false, isSystem = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+
+            messageDiv.className = `message ${isSystem ? 'system' : (isOwn ? 'own' : 'other')}`;
+            messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(text, connected) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = `Status: ${text}`;
+            statusDiv.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+    </script>
+</body>
+</html>
