@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getUserFromRequest } from '@/lib/auth';
 
-// GET - Get current user info
+// GET - Get all users or current user info
 export async function GET(request: NextRequest) {
   try {
     const tokenUser = getUserFromRequest(request);
@@ -16,6 +16,18 @@ export async function GET(request: NextRequest) {
     }
 
     await dbConnect();
+
+    const { searchParams } = new URL(request.url);
+    const all = searchParams.get('all');
+
+    if (all === 'true') {
+      // Get all users except the current user
+      const users = await User.find({ _id: { $ne: tokenUser.userId } })
+        .select('-password')
+        .sort({ isOnline: -1, lastSeen: -1 });
+
+      return NextResponse.json({ users });
+    }
 
     const user = await User.findById(tokenUser.userId).select('-password');
 
@@ -31,6 +43,41 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
       { error: 'Failed to fetch user' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Update user status
+export async function PATCH(request: NextRequest) {
+  try {
+    const tokenUser = getUserFromRequest(request);
+    
+    if (!tokenUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await dbConnect();
+
+    const { isOnline } = await request.json();
+
+    const user = await User.findByIdAndUpdate(
+      tokenUser.userId,
+      { 
+        isOnline, 
+        lastSeen: new Date() 
+      },
+      { new: true }
+    ).select('-password');
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json(
+      { error: 'Failed to update user' },
       { status: 500 }
     );
   }

@@ -2,9 +2,13 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
+  receiver: mongoose.Types.ObjectId;
   senderUsername: string;
+  receiverUsername: string;
   content: string;
-  room: string;
+  conversationId: string;
+  isRead: boolean;
+  readAt?: Date;
   createdAt: Date;
 }
 
@@ -14,7 +18,16 @@ const MessageSchema: Schema = new Schema({
     ref: "User",
     required: true,
   },
+  receiver: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   senderUsername: {
+    type: String,
+    required: true,
+  },
+  receiverUsername: {
     type: String,
     required: true,
   },
@@ -24,16 +37,26 @@ const MessageSchema: Schema = new Schema({
     trim: true,
     maxlength: 1000,
   },
-  room: {
+  conversationId: {
     type: String,
     required: true,
-    default: "general",
+    index: true,
+  },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
+  readAt: {
+    type: Date,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// Create compound index for efficient conversation queries
+MessageSchema.index({ conversationId: 1, createdAt: 1 });
 
 export default mongoose.models.Message ||
   mongoose.model<IMessage>("Message", MessageSchema);

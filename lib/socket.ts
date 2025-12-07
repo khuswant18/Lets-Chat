@@ -12,27 +12,41 @@ interface UserPayload {
 
 interface MessagePayload {
   content: string;
-  room: string;
+  receiverId: string;
+  receiverUsername: string;
+  conversationId: string;
+}
+
+interface TypingPayload {
+  receiverId: string;
+  isTyping: boolean;
 }
 
 interface ServerToClientEvents {
   message: (data: {
     _id: string;
     sender: string;
+    receiver: string;
     senderUsername: string;
+    receiverUsername: string;
     content: string;
-    room: string;
+    conversationId: string;
+    isRead: boolean;
     createdAt: string;
   }) => void;
-  userJoined: (data: { username: string; room: string }) => void;
-  userLeft: (data: { username: string; room: string }) => void;
+  typing: (data: { userId: string; username: string; isTyping: boolean }) => void;
+  userOnline: (data: { userId: string; username: string }) => void;
+  userOffline: (data: { userId: string; username: string }) => void;
+  messageRead: (data: { conversationId: string; readBy: string }) => void;
   error: (data: { message: string }) => void;
+  onlineUsers: (userIds: string[]) => void;
 }
 
 interface ClientToServerEvents {
-  joinRoom: (room: string) => void;
-  leaveRoom: (room: string) => void;
   sendMessage: (data: MessagePayload) => void;
+  typing: (data: TypingPayload) => void;
+  markAsRead: (data: { conversationId: string; senderId: string }) => void;
+  getOnlineUsers: () => void;
 }
 
 interface InterServerEvents {
@@ -49,6 +63,32 @@ let io: SocketIOServer<
   InterServerEvents,
   SocketData
 > | null = null;
+
+// Track online users: Map<userId, Set<socketId>>
+const onlineUsers = new Map<string, Set<string>>();
+
+function addUserSocket(userId: string, socketId: string) {
+  if (!onlineUsers.has(userId)) {
+    onlineUsers.set(userId, new Set());
+  }
+  onlineUsers.get(userId)!.add(socketId);
+}
+
+function removeUserSocket(userId: string, socketId: string) {
+  const userSockets = onlineUsers.get(userId);
+  if (userSockets) {
+    userSockets.delete(socketId);
+    if (userSockets.size === 0) {
+      onlineUsers.delete(userId);
+      return true; // User is now offline
+    }
+  }
+  return false;
+}
+
+function getOnlineUserIds(): string[] {
+  return Array.from(onlineUsers.keys());
+}
 
 export function initSocketServer(httpServer: HTTPServer) {
   if (io) return io;
@@ -79,26 +119,43 @@ export function initSocketServer(httpServer: HTTPServer) {
 
   io.on('connection', (socket: Socket) => {
     const user = socket.data.user;
-    console.log(`User connected: ${user?.username}`);
+    if (!user) return;
 
-    socket.on('joinRoom', (room: string) => {
-      socket.join(room);
-      socket.to(room).emit('userJoined', {
-        username: user?.username || 'Unknown',
-        room,
+    console.log(`User connected: ${user.username}`);
+
+    // Join user's personal room for direct messages
+    socket.join(user.userId);
+    
+    // Track online status
+    const wasOffline = !onlineUsers.has(user.userId);
+    addUserSocket(user.userId, socket.id);
+
+    // Notify others that user is online
+    if (wasOffline) {
+      socket.broadcast.emit('userOnline', {
+        userId: user.userId,
+        username: user.username,
       });
-      console.log(`${user?.username} joined room: ${room}`);
+    }
+
+    // Send current online users to the newly connected client
+    socket.emit('onlineUsers', getOnlineUserIds());
+
+    // Handle request for online users
+    socket.on('getOnlineUsers', () => {
+      socket.emit('onlineUsers', getOnlineUserIds());
     });
 
-    socket.on('leaveRoom', (room: string) => {
-      socket.leave(room);
-      socket.to(room).emit('userLeft', {
-        username: user?.username || 'Unknown',
-        room,
+    // Handle typing indicator
+    socket.on('typing', (data: TypingPayload) => {
+      io?.to(data.receiverId).emit('typing', {
+        userId: user.userId,
+        username: user.username,
+        isTyping: data.isTyping,
       });
-      console.log(`${user?.username} left room: ${room}`);
     });
 
+    // Handle direct message
     socket.on('sendMessage', async (data: MessagePayload) => {
       if (!user) {
         socket.emit('error', { message: 'User not authenticated' });
@@ -108,18 +165,40 @@ export function initSocketServer(httpServer: HTTPServer) {
       const messageData = {
         _id: Date.now().toString(),
         sender: user.userId,
+        receiver: data.receiverId,
         senderUsername: user.username,
+        receiverUsername: data.receiverUsername,
         content: data.content,
-        room: data.room,
+        conversationId: data.conversationId,
+        isRead: false,
         createdAt: new Date().toISOString(),
       };
 
-      // Broadcast to all clients in the room including sender
-      io?.to(data.room).emit('message', messageData);
+      // Send to receiver
+      io?.to(data.receiverId).emit('message', messageData);
+      // Send back to sender for confirmation
+      socket.emit('message', messageData);
+    });
+
+    // Handle message read
+    socket.on('markAsRead', (data: { conversationId: string; senderId: string }) => {
+      io?.to(data.senderId).emit('messageRead', {
+        conversationId: data.conversationId,
+        readBy: user.userId,
+      });
     });
 
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${user?.username}`);
+      console.log(`User disconnected: ${user.username}`);
+      
+      const isNowOffline = removeUserSocket(user.userId, socket.id);
+      
+      if (isNowOffline) {
+        io?.emit('userOffline', {
+          userId: user.userId,
+          username: user.username,
+        });
+      }
     });
   });
 
