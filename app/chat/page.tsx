@@ -134,94 +134,101 @@ export default function ChatPage() {
       // Fetch users
       fetchUsers();
 
-      // Initialize Socket.io connection
-      const socket = io({
-        auth: { token },
-      });
-
-      socketRef.current = socket;
-
-      socket.on('connect', () => {
-        console.log('Connected to WebSocket');
-        setConnected(true);
-        socket.emit('getOnlineUsers');
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Disconnected from WebSocket');
-        setConnected(false);
-      });
-
-      socket.on('onlineUsers', (userIds: string[]) => {
-        setOnlineUserIds(new Set(userIds));
-      });
-
-      socket.on('userOnline', ({ userId }) => {
-        setOnlineUserIds(prev => new Set([...prev, userId]));
-        // Refresh users list to update status
-        fetchUsers();
-      });
-
-      socket.on('userOffline', ({ userId }) => {
-        setOnlineUserIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(userId);
-          return newSet;
+      // Check if Socket.io should be disabled (e.g., in Vercel production)
+      const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+      
+      if (!isProduction) {
+        // Initialize Socket.io connection for development
+        const socket = io({
+          auth: { token },
         });
-        // Refresh users list to update status
-        fetchUsers();
-      });
 
-      socket.on('message', (message: Message) => {
-        setMessages((prev) => {
-          // Avoid duplicates
-          if (prev.some((m) => m._id === message._id)) {
-            return prev;
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+          console.log('Connected to WebSocket');
+          setConnected(true);
+          socket.emit('getOnlineUsers');
+        });
+
+        socket.on('disconnect', () => {
+          console.log('Disconnected from WebSocket');
+          setConnected(false);
+        });
+
+        socket.on('onlineUsers', (userIds: string[]) => {
+          setOnlineUserIds(new Set(userIds));
+        });
+
+        socket.on('userOnline', ({ userId }) => {
+          setOnlineUserIds(prev => new Set([...prev, userId]));
+          fetchUsers();
+        });
+
+        socket.on('userOffline', ({ userId }) => {
+          setOnlineUserIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(userId);
+            return newSet;
+          });
+          fetchUsers();
+        });
+
+        socket.on('message', (message: Message) => {
+          setMessages((prev) => {
+            if (prev.some((m) => m._id === message._id)) {
+              return prev;
+            }
+            return [...prev, message];
+          });
+
+          if (message.sender !== parsedUser._id) {
+            setUnreadCounts(prev => {
+              const newMap = new Map(prev);
+              const currentCount = newMap.get(message.conversationId) || 0;
+              newMap.set(message.conversationId, currentCount + 1);
+              return newMap;
+            });
           }
-          return [...prev, message];
         });
 
-        // Update unread count if message is from someone else and not in current conversation
-        if (message.sender !== parsedUser._id) {
-          setUnreadCounts(prev => {
+        socket.on('typing', ({ userId, username, isTyping }) => {
+          setTypingUsers(prev => {
             const newMap = new Map(prev);
-            const currentCount = newMap.get(message.conversationId) || 0;
-            newMap.set(message.conversationId, currentCount + 1);
+            if (isTyping) {
+              newMap.set(userId, { userId, username });
+            } else {
+              newMap.delete(userId);
+            }
             return newMap;
           });
-        }
-      });
-
-      socket.on('typing', ({ userId, username, isTyping }) => {
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          if (isTyping) {
-            newMap.set(userId, { userId, username });
-          } else {
-            newMap.delete(userId);
-          }
-          return newMap;
         });
-      });
 
-      socket.on('messageRead', ({ conversationId }) => {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.conversationId === conversationId && !msg.isRead
-              ? { ...msg, isRead: true }
-              : msg
-          )
-        );
-      });
+        socket.on('messageRead', ({ conversationId }) => {
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.conversationId === conversationId && !msg.isRead
+                ? { ...msg, isRead: true }
+                : msg
+            )
+          );
+        });
 
-      socket.on('error', ({ message }) => {
-        setError(message);
-      });
+        socket.on('error', ({ message }) => {
+          setError(message);
+        });
+      } else {
+        // Production mode (Vercel) - disable Socket.io
+        console.log('Running in production mode - Socket.io disabled');
+        setConnected(false);
+      }
 
       setLoading(false);
 
       return () => {
-        socket.disconnect();
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
       };
     } catch {
       router.push('/login');
@@ -379,10 +386,12 @@ export default function ChatPage() {
       .slice(0, 2);
   };
 
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    if (!user || !user.username || !user.email) return false;
+    const query = searchQuery.toLowerCase();
+    return user.username.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query);
+  });
 
   const isTypingToMe = selectedUser && typingUsers.has(selectedUser._id);
 
