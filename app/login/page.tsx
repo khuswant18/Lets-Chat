@@ -36,11 +36,9 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('JWT Token:', data.token); 
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        alert('Login successful!');
-        router.push('/');
+        router.push('/chat');
       } else {
         setError(data.error || 'Login failed');
       }

@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lets Chat - Real-time Chat Application
+
+A full-stack real-time chat application built with Next.js, MongoDB, Socket.io, and TypeScript.
+
+## Features
+
+- 🔐 User authentication (signup/login)
+- 💬 Real-time messaging with WebSocket
+- 🎨 Modern UI with Tailwind CSS
+- 📱 Responsive design
+- 🔒 JWT-based authentication
+- 📦 MongoDB for data persistence
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes, Socket.io
+- **Database:** MongoDB Atlas
+- **Authentication:** JWT tokens
+- **Real-time:** WebSocket with Socket.io
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas account (free tier available)
+
+### 1. Clone the repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/khuswant18/Lets-Chat.git
+cd Lets-Chat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Set up MongoDB Atlas
 
-## Learn More
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
+2. Create a free account and cluster
+3. Create a database user
+4. Get your connection string from the "Connect" button
+5. Update `.env.local` with your MongoDB URI:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/letschat?retryWrites=true&w=majority
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run the application
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### Development mode (with WebSocket support):
+```bash
+npm run dev:socket
+```
 
-## Deploy on Vercel
+#### Standard Next.js development:
+```bash
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Usage
+
+1. **Sign Up:** Create a new account
+2. **Login:** Sign in with your credentials
+3. **Chat:** Start sending real-time messages in the general room
+
+## API Routes
+
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - User authentication
+- `GET /api/messages` - Fetch messages
+- `POST /api/messages` - Send a message
+- `GET /api/users` - Get current user info
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/
+│   │   └── auth/
+│   │       ├── login/
+│   │       └── signup/
+│   ├── chat/
+│   ├── login/
+│   ├── signup/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── lib/
+│   ├── auth.ts
+│   ├── mongodb.ts
+│   └── socket.ts
+├── models/
+│   ├── Message.ts
+│   └── User.ts
+├── server.ts
+└── .env.local
+```
+
+## Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+MONGODB_URI=your-mongodb-atlas-connection-string
+JWT_SECRET=your-secure-jwt-secret
+```
+
+## Deployment
+
+### Vercel Deployment
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy
+
+### Local MongoDB (Alternative)
+
+If you prefer local MongoDB:
+
+```bash
+# Install MongoDB locally
+brew install mongodb-community
+
+# Start MongoDB
+brew services start mongodb-community
+
+# Update .env.local
+MONGODB_URI=mongodb://localhost:27017/letschat
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

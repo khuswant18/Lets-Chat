@@ -3,12 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx server.ts",
+    "dev:next": "next dev",
+    "dev:socket": "tsx server.ts",
     "build": "next build",
     "start": "next start",
+    "start:socket": "node dist/server.js",
     "lint": "eslint"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.22",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
@@ -16,7 +20,9 @@
     "mongoose": "^7.6.0",
     "next": "16.0.2",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -28,6 +34,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
