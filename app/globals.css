@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Typing indicator animation delays */
 .animation-delay-150 {
   animation-delay: 150ms;
 }
@@ -8,8 +7,6 @@
 .animation-delay-300 {
   animation-delay: 300ms;
 }
-
-/* Custom scrollbar for chat */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

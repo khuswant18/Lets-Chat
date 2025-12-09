@@ -48,7 +48,6 @@ async function dbConnect(): Promise<typeof mongoose> {
   return cached!.conn;
 }
 
-// Connection event listeners
 mongoose.connection.on('connected', () => {
   console.log('Mongo has connected successfully');
 });

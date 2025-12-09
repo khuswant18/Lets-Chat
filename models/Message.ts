@@ -55,7 +55,6 @@ const MessageSchema: Schema = new Schema({
   },
 });
 
-// Create compound index for efficient conversation queries
 MessageSchema.index({ conversationId: 1, createdAt: 1 });
 
 export default mongoose.models.Message ||

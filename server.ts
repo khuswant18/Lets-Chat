@@ -16,7 +16,6 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  // Initialize Socket.io
   initSocketServer(httpServer);
 
   httpServer.listen(port, () => {

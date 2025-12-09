@@ -80,7 +80,6 @@ export default function ChatPage() {
       if (response.ok) {
         setMessages(data.messages);
         
-        // Clear unread count for this conversation
         if (currentUser) {
           const convId = createConversationId(currentUser._id, receiverId);
           setUnreadCounts(prev => {
@@ -131,14 +130,11 @@ export default function ChatPage() {
       const parsedUser = JSON.parse(storedUser);
       setCurrentUser(parsedUser);
       
-      // Fetch users
       fetchUsers();
 
-      // Check if Socket.io should be disabled (e.g., in Vercel production)
       const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
       
       if (!isProduction) {
-        // Initialize Socket.io connection for development
         const socket = io({
           auth: { token },
         });
@@ -218,7 +214,6 @@ export default function ChatPage() {
           setError(message);
         });
       } else {
-        // Production mode (Vercel) - disable Socket.io
         console.log('Running in production mode - Socket.io disabled');
         setConnected(false);
       }
@@ -235,12 +230,10 @@ export default function ChatPage() {
     }
   }, [router, fetchUsers]);
 
-  // Fetch messages when selecting a user
   useEffect(() => {
     if (selectedUser) {
       fetchMessages(selectedUser._id);
       
-      // Mark messages as read
       if (socketRef.current && currentUser) {
         const conversationId = createConversationId(currentUser._id, selectedUser._id);
         socketRef.current.emit('markAsRead', {
@@ -268,7 +261,6 @@ export default function ChatPage() {
     const conversationId = createConversationId(currentUser._id, selectedUser._id);
 
     try {
-      // Save to database
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -284,11 +276,9 @@ export default function ChatPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Add message to local state
         setMessages(prev => [...prev, data.message]);
         setNewMessage('');
         
-        // Also broadcast via WebSocket for real-time delivery
         if (socketRef.current?.connected) {
           socketRef.current.emit('sendMessage', {
             content: newMessage.trim(),
@@ -298,7 +288,6 @@ export default function ChatPage() {
           });
         }
 
-        // Stop typing indicator
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
@@ -321,18 +310,15 @@ export default function ChatPage() {
 
     if (!selectedUser || !socketRef.current) return;
 
-    // Emit typing indicator
     socketRef.current.emit('typing', {
       receiverId: selectedUser._id,
       isTyping: true,
     });
 
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Stop typing indicator after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       socketRef.current?.emit('typing', {
         receiverId: selectedUser._id,
@@ -405,9 +391,7 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen flex bg-gray-900 text-white overflow-hidden">
-      {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} flex-shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300 overflow-hidden`}>
-        {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-white">Lets Chat</h1>
@@ -416,7 +400,6 @@ export default function ChatPage() {
             </div>
           </div>
           
-          {/* Search */}
           <div className="relative">
             <input
               type="text"
@@ -436,7 +419,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Users List */}
         <div className="flex-1 overflow-y-auto">
           {filteredUsers.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
@@ -454,7 +436,6 @@ export default function ChatPage() {
                   key={user._id}
                   onClick={() => {
                     setSelectedUser(user);
-                    // Clear unread count
                     if (currentUser) {
                       const convId = createConversationId(currentUser._id, user._id);
                       setUnreadCounts(prev => {
@@ -468,7 +449,6 @@ export default function ChatPage() {
                     isSelected ? 'bg-gray-700' : ''
                   }`}
                 >
-                  {/* Avatar */}
                   <div className="relative">
                     <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
                       {getInitials(user.username)}
@@ -478,7 +458,6 @@ export default function ChatPage() {
                     )}
                   </div>
 
-                  {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium truncate">{user.username}</h3>
@@ -498,7 +477,6 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Current User */}
         <div className="p-4 border-t border-gray-700 bg-gray-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
@@ -521,7 +499,6 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Toggle Sidebar Button (Mobile) */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg text-white"
@@ -532,11 +509,9 @@ export default function ChatPage() {
         </svg>
       </button>
 
-      {/* Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {selectedUser ? (
           <>
-            {/* Chat Header */}
             <div className="p-4 bg-gray-800 border-b border-gray-700 flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -572,7 +547,6 @@ export default function ChatPage() {
                 </p>
               </div>
 
-              {/* Chat Actions */}
               <div className="flex items-center gap-2">
                 <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors" title="Voice call">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -592,7 +566,6 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-900">
               {messagesLoading ? (
                 <div className="flex items-center justify-center h-full">
@@ -666,7 +639,6 @@ export default function ChatPage() {
             )}
             </div>
 
-            {/* Typing Indicator */}
             {isTypingToMe && (
               <div className="px-4 py-2 bg-gray-800 text-sm text-gray-400">
                 <span className="flex items-center gap-2">
@@ -680,7 +652,6 @@ export default function ChatPage() {
               </div>
             )}
 
-            {/* Message Input */}
             <div className="p-4 bg-gray-800 border-t border-gray-700">
               {error && (
                 <div className="mb-2 text-sm text-red-500">{error}</div>
@@ -732,7 +703,6 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          /* No Chat Selected */
           <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 text-gray-500">
             <svg className="w-24 h-24 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

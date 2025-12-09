@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
     const all = searchParams.get('all');
 
     if (all === 'true') {
-      // Get all users except the current user
       const users = await User.find({ _id: { $ne: tokenUser.userId } })
         .select('-password')
         .sort({ isOnline: -1, lastSeen: -1 });

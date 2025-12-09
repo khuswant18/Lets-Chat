@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const receiverId = searchParams.get('receiverId');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const before = searchParams.get('before'); // For pagination
+    const before = searchParams.get('before');
 
     if (!receiverId) {
       return NextResponse.json(
@@ -46,7 +46,6 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .lean();
 
-    // Mark unread messages as read
     await Message.updateMany(
       {
         conversationId,
@@ -102,7 +101,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get receiver details
     const receiver = await User.findById(receiverId).select('username');
     if (!receiver) {
       return NextResponse.json(

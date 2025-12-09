@@ -64,7 +64,6 @@ let io: SocketIOServer<
   SocketData
 > | null = null;
 
-// Track online users: Map<userId, Set<socketId>>
 const onlineUsers = new Map<string, Set<string>>();
 
 function addUserSocket(userId: string, socketId: string) {
@@ -80,7 +79,7 @@ function removeUserSocket(userId: string, socketId: string) {
     userSockets.delete(socketId);
     if (userSockets.size === 0) {
       onlineUsers.delete(userId);
-      return true; // User is now offline
+      return true;
     }
   }
   return false;
@@ -123,14 +122,11 @@ export function initSocketServer(httpServer: HTTPServer) {
 
     console.log(`User connected: ${user.username}`);
 
-    // Join user's personal room for direct messages
     socket.join(user.userId);
     
-    // Track online status
     const wasOffline = !onlineUsers.has(user.userId);
     addUserSocket(user.userId, socket.id);
 
-    // Notify others that user is online
     if (wasOffline) {
       socket.broadcast.emit('userOnline', {
         userId: user.userId,
@@ -138,15 +134,12 @@ export function initSocketServer(httpServer: HTTPServer) {
       });
     }
 
-    // Send current online users to the newly connected client
     socket.emit('onlineUsers', getOnlineUserIds());
 
-    // Handle request for online users
     socket.on('getOnlineUsers', () => {
       socket.emit('onlineUsers', getOnlineUserIds());
     });
 
-    // Handle typing indicator
     socket.on('typing', (data: TypingPayload) => {
       io?.to(data.receiverId).emit('typing', {
         userId: user.userId,
@@ -155,7 +148,6 @@ export function initSocketServer(httpServer: HTTPServer) {
       });
     });
 
-    // Handle direct message
     socket.on('sendMessage', async (data: MessagePayload) => {
       if (!user) {
         socket.emit('error', { message: 'User not authenticated' });
@@ -174,13 +166,10 @@ export function initSocketServer(httpServer: HTTPServer) {
         createdAt: new Date().toISOString(),
       };
 
-      // Send to receiver
       io?.to(data.receiverId).emit('message', messageData);
-      // Send back to sender for confirmation
       socket.emit('message', messageData);
     });
 
-    // Handle message read
     socket.on('markAsRead', (data: { conversationId: string; senderId: string }) => {
       io?.to(data.senderId).emit('messageRead', {
         conversationId: data.conversationId,
