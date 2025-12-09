@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getUserFromRequest } from '@/lib/auth';
 
-// GET - Get all users or current user info
+
 export async function GET(request: NextRequest) {
   try {
     const tokenUser = getUserFromRequest(request);
@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH - Update user status
 export async function PATCH(request: NextRequest) {
   try {
     const tokenUser = getUserFromRequest(request);

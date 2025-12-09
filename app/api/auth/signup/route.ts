@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 
-// Vercel configuration
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 

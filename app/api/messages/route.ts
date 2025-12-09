@@ -4,12 +4,11 @@ import Message from '@/models/Message';
 import User from '@/models/User';
 import { getUserFromRequest } from '@/lib/auth';
 
-// Helper function to create conversation ID (sorted user IDs)
+
 function createConversationId(userId1: string, userId2: string): string {
   return [userId1, userId2].sort().join('_');
 }
 
-// GET - Fetch messages for a conversation
 export async function GET(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
@@ -73,7 +72,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Send a new message
+
 export async function POST(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
@@ -137,7 +136,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH - Mark messages as read
+
 export async function PATCH(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);

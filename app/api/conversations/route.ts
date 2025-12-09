@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import Message from '@/models/Message';
 import { getUserFromRequest } from '@/lib/auth';
 
-// GET - Get all conversations with last message and unread count
+
 export async function GET(request: NextRequest) {
   try {
     const user = getUserFromRequest(request);
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     await dbConnect();
 
-    // Get all unique conversation IDs for this user
+
     const conversations = await Message.aggregate([
       {
         $match: {
